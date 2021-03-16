@@ -38,8 +38,6 @@ def to_svg(mathjaxs, equation=False):
     for mathjax in mathjaxs:     
         print(mathjax.string)
         wrap = wrap_latex(mathjax, equation=equation)
-        if wrap is None:
-            continue
         out = {}
         try:
             out = latex2svg(wrap)   

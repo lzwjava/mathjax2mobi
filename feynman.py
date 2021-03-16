@@ -1,9 +1,6 @@
 import subprocess
-from tkinter.constants import NO
-from bs4 import BeautifulSoup,Tag
-from bs4.element import NavigableString
+from bs4 import BeautifulSoup
 from latex2svg import latex2svg
-import random
 
 def clean_mathjax(soup, name, cls):
     previews = soup.findAll(name, {'class': cls})
@@ -58,13 +55,9 @@ def to_svg(mathjaxs, equation=False):
         img.attrs['src'] = f'./svgs/{svg_prefix}{i}.svg'
         img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
         
-        svg = node.find('svg')
-        svg.attrs['style'] = 'vertical-align: middle;'
-        p = wrap_svg(svg, equation)
+        p = wrap_svg(img, equation)
         mathjax.insert_after(p)
         i +=1
-        
-        
 
 def main():    
     file = open('The Feynman Lectures on Physics Vol. I Ch. 13_ Work and Potential Energy (A).html')
@@ -74,7 +67,6 @@ def main():
     clean_mathjax(soup, 'span', 'MathJax')
     clean_mathjax(soup, 'div', 'MathJax_Display')
     clean_mathjax(soup, 'span', 'MathJax_Preview')
-    clean_mathjax(soup,  'p', 'p')
     
     mathjaxs = soup.findAll('script', {'type': 'math/tex'})
     to_svg(mathjaxs, equation=False)
@@ -86,10 +78,7 @@ def main():
     
     output_file = open('out.html', 'w')
     output_file.write(soup.prettify())
-    output_file.close()
-    
-    
+    output_file.close()    
 
 main()
-
      

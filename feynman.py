@@ -47,32 +47,21 @@ def to_svg(mathjaxs, equation=False):
         try:
             out = latex2svg(wrap)   
         except subprocess.CalledProcessError as err:
-            raise err
-            # print(err)
-            # continue 
+            raise err      
             
         f = open(f'svgs/{svg_prefix}{i}.svg', 'w')
         f.write(out['svg'])
         f.close()
-        # i += 1
         
-        node = BeautifulSoup(out['svg'], features="lxml")        
-        svg = node.find('svg')
-        svg.attrs['style'] = 'vertical-align: middle;'
-        
-        # node = BeautifulSoup('<img>', features="lxml")
-        # img = node.find('img')
-        # img.attrs['src'] = f'./svgs/{svg_prefix}{i}.svg'
-        # img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
+        node = BeautifulSoup('<img>', features="lxml")
+        img = node.find('img')
+        img.attrs['src'] = f'./svgs/{svg_prefix}{i}.svg'
+        img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
         
         svg = node.find('svg')
         svg.attrs['style'] = 'vertical-align: middle;'
         p = wrap_svg(svg, equation)
         mathjax.insert_after(p)
-        # if i%3 == 0:            
-            
-        # print(out['width'])
-        # print(out['height'])
         i +=1
         
         
@@ -87,8 +76,8 @@ def main():
     clean_mathjax(soup, 'span', 'MathJax_Preview')
     clean_mathjax(soup,  'p', 'p')
     
-    # mathjaxs = soup.findAll('script', {'type': 'math/tex'})
-    # to_svg(mathjaxs, equation=False)
+    mathjaxs = soup.findAll('script', {'type': 'math/tex'})
+    to_svg(mathjaxs, equation=False)
     
     mathjaxs = soup.findAll('script', {'type': 'math/tex; mode=display'})   
     to_svg(mathjaxs, equation=True)

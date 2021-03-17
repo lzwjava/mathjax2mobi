@@ -4,9 +4,13 @@ import timeit
 from pathlib import Path
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from feynman import mathjax2svg
+
+def chapter_path(chapter):
+    return f'./chapters/{chapter}'
 
 def img_path(chapter):
-    return f'./chapters/{chapter}/img'
+    return f'{chapter_path(chapter)}/img'
 
 def img_name(url):
     splits = url.split('/')
@@ -35,9 +39,11 @@ def scrape(chapter):
     driver = webdriver.Chrome()
     driver.get(url)
     page_source = driver.page_source        
-    Path(f'./chapters/{chapter_str}').mkdir(parents=True, exist_ok=True)    
+    chapter_path_s = chapter_path(chapter_str)
+    
+    Path(chapter_path_s).mkdir(parents=True, exist_ok=True)    
     print(f'scraping {url}')
-        
+            
     download_images(driver, chapter_str)
         
     soup = BeautifulSoup(page_source, features='lxml')        
@@ -53,16 +59,18 @@ def scrape(chapter):
             name = img_name(src)
             img.attrs['src'] = f'img/{name}.png'                
     
-    f = open(f'./chapters/{chapter_str}/I_{chapter_str}.html', 'w')
-    f.write(soup.prettify())
-    f.close()
+    result = mathjax2svg(soup.prettify(), f'{chapter_path_s}/svgs')
     
+    f = open(f'{chapter_path_s}/I_{chapter_str}.html', 'w')
+    f.write(result)
+    f.close()
+        
     driver.close()
         
 
 def main():
     start = timeit.default_timer()
-    ps = [Process(target=scrape, args=(i+1,)) for i in range(2)]
+    ps = [Process(target=scrape, args=(i+1,)) for i in range(1)]
     for p in ps:
         p.start()
     for p in ps:

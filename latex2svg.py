@@ -20,6 +20,8 @@ default_template = r"""
 \documentclass[{{ fontsize }}pt,preview]{standalone}
 {{ preamble }}
 
+{{ macros }}
+
 \begin{document}
 \begin{preview}
 {{ code }}
@@ -34,19 +36,9 @@ default_preamble = r"""
 \usepackage{amssymb}
 \usepackage{newtxtext}
 \usepackage[libertine]{newtxmath}
+"""
 
-\newcommand{\FLPvec}[1]{\boldsymbol{#1}}
-\newcommand{\Figvec}[1]{\mathbf{#1}}
-\newcommand{\FLPC}{\FLPvec{C}}
-\newcommand{\FLPF}{\FLPvec{F}}
-\newcommand{\FLPa}{\FLPvec{a}}
-\newcommand{\FLPb}{\FLPvec{a}}
-\newcommand{\FLPr}{\FLPvec{r}}
-\newcommand{\FLPs}{\FLPvec{s}}
-\newcommand{\FLPv}{\FLPvec{v}}
-\newcommand{\ddt}[2]{\frac{d#1}{d#2}}
-\newcommand{\epsO}{\epsilon_0}
-\newcommand{\FigC}{\Figvec{C}}
+default_macros = r"""
 """
 
 latex_cmd = 'latex -interaction nonstopmode -halt-on-error'
@@ -56,6 +48,7 @@ default_params = {
     'fontsize': 14,  # pt
     'template': default_template,
     'preamble': default_preamble,
+    'macros': default_macros,
     'latex_cmd': latex_cmd,
     'dvisvgm_cmd': dvisvgm_cmd,
     'libgs': None,
@@ -98,6 +91,7 @@ def latex2svg(code, params=default_params, working_directory=None):
     fontsize = params['fontsize']
     document = (params['template']
                 .replace('{{ preamble }}', params['preamble'])
+                .replace('{{ macros }}', params['macros'])
                 .replace('{{ fontsize }}', str(fontsize))
                 .replace('{{ code }}', code))
     

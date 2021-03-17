@@ -14,10 +14,23 @@ def scrape(chapter):
     r = requests.get(url)
     if r.status_code != 200:
         raise Exception(r.status_code)
-    soup = BeautifulSoup(r.text, features='lxml')
+    soup = BeautifulSoup(r.text, features='lxml')    
     f = open(f'./chapters/{chapter_str}/I_{chapter_str}.html', 'w')
     f.write(soup.prettify())
     f.close()
+    
+    imgs = soup.find_all('img')
+    for img in imgs:
+        if 'src' in img.attrs or 'data-src' in img.attrs:
+            src = ''
+            if 'src' in img.attrs:
+                src = img.attrs['src']
+            else:
+                src = img.attrs['data-src']
+            
+            print(img['src'])
+        # print(type(img))
+        
 
 def main():
     start = timeit.default_timer()

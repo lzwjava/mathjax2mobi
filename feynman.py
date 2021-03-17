@@ -3,12 +3,12 @@ from bs4 import BeautifulSoup
 from latex2svg import latex2svg
 
 def clean_mathjax(soup, name, cls):
-    previews = soup.findAll(name, {'class': cls})
+    previews = soup.find_all(name, {'class': cls})
     for preview in previews:
         preview.decompose()
         
 def clean_script(soup):
-    scripts = soup.findAll('script')
+    scripts = soup.find_all('script')
     for s in scripts:
         s.decompose()    
 
@@ -66,10 +66,10 @@ def main():
     clean_mathjax(soup, 'div', 'MathJax_Display')
     clean_mathjax(soup, 'span', 'MathJax_Preview')
     
-    mathjaxs = soup.findAll('script', {'type': 'math/tex'})
+    mathjaxs = soup.find_all('script', {'type': 'math/tex'})
     to_svg(mathjaxs, equation=False)
     
-    mathjaxs = soup.findAll('script', {'type': 'math/tex; mode=display'})   
+    mathjaxs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
     to_svg(mathjaxs, equation=True)
     
     clean_script(soup)

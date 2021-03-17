@@ -1,5 +1,6 @@
 import subprocess
 from sys import prefix
+from typing import List
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
 from latex2svg import latex2svg
@@ -51,6 +52,8 @@ def make_svg(latex_str: str, svg_path: str, svg_i: int, equation: bool):
     try:
         out = latex2svg(latex_str)   
     except subprocess.CalledProcessError as err:
+        print(err.stderr)
+        print(err.stdout)
         raise err      
         
     f = open(f'{svg_path}/{prefix}{svg_i}.svg', 'w')
@@ -67,8 +70,15 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
     
     p = wrap_svg(img, equation)
     latex.insert_after(p)
+    
+def to_svg_sync(latexs: List[PageElement], svg_path: str, equation=False):
+     for (svg_i, latex) in enumerate(latexs):  
+         latex_str = wrap_latex(latex, equation)
+         make_svg(latex_str, svg_path, svg_i, equation)
+         insert_svg(latex, svg_path, svg_i, equation)
+    
 
-def to_svg(latexs: [PageElement], svg_path: str, equation=False):
+def to_svg(latexs: List[PageElement], svg_path: str, equation=False):
     ps = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)
@@ -93,10 +103,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     clean_mathjax(soup, 'span', 'MathJax_Preview')
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg(latexs, svg_path, equation=False)
+    to_svg_sync(latexs, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg(latexs, svg_path, equation=True)
+    to_svg_sync(latexs, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      
@@ -113,3 +123,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # pass

@@ -1,40 +1,68 @@
-import requests
 from bs4 import BeautifulSoup
 from multiprocessing import Process
 import timeit
 from pathlib import Path
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+
+def img_path(chapter):
+    return f'./chapters/{chapter}/img'
+
+def img_name(url):
+    splits = url.split('/')
+    last = splits[len(splits) - 1]
+    parts = last.split('.')
+    name = parts[0]
+    return name
+
+def download_images(driver: webdriver.Chrome, chapter):        
+    path = img_path(chapter)
+    Path(path).mkdir(parents=True, exist_ok=True)    
+        
+    elements = driver.find_elements(By.TAG_NAME, "img")    
+    for element in elements:
+        src = element.get_attribute('src')
+        name = img_name(src)
+        element.screenshot(f'{path}/{name}.png')
+
+USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15'
 
 def scrape(chapter):
     if chapter < 1 or chapter > 52:
         raise Exception(f'chapter {chapter}')
     chapter_str = '{:02d}'.format(chapter)
-    Path(f'./chapters/{chapter_str}').mkdir(parents=True, exist_ok=True)
     url = f'https://www.feynmanlectures.caltech.edu/I_{chapter_str}.html'
+    driver = webdriver.Chrome()
+    driver.get(url)
+    page_source = driver.page_source        
+    Path(f'./chapters/{chapter_str}').mkdir(parents=True, exist_ok=True)    
     print(f'scraping {url}')
-    r = requests.get(url)
-    if r.status_code != 200:
-        raise Exception(r.status_code)
-    soup = BeautifulSoup(r.text, features='lxml')    
-    f = open(f'./chapters/{chapter_str}/I_{chapter_str}.html', 'w')
-    f.write(soup.prettify())
-    f.close()
-    
+        
+    download_images(driver, chapter_str)
+        
+    soup = BeautifulSoup(page_source, features='lxml')        
     imgs = soup.find_all('img')
     for img in imgs:
         if 'src' in img.attrs or 'data-src' in img.attrs:
             src = ''
             if 'src' in img.attrs:
                 src = img.attrs['src']
-            else:
+            elif 'data-src' in img.attrs:
                 src = img.attrs['data-src']
-            
-            print(img['src'])
-        # print(type(img))
+                del img.attrs['data-src']
+            name = img_name(src)
+            img.attrs['src'] = f'img/{name}.png'                
+    
+    f = open(f'./chapters/{chapter_str}/I_{chapter_str}.html', 'w')
+    f.write(soup.prettify())
+    f.close()
+    
+    driver.close()
         
 
 def main():
     start = timeit.default_timer()
-    ps = [Process(target=scrape, args=(i+1,)) for i in range(1)]
+    ps = [Process(target=scrape, args=(i+1,)) for i in range(2)]
     for p in ps:
         p.start()
     for p in ps:

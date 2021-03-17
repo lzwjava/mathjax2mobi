@@ -81,8 +81,8 @@ def to_svg(latexs: [PageElement], svg_path: str, equation=False):
     for p in ps:
         p.join()
         
-    # for (svg_i, latex) in enumerate(latexs):  
-    #     insert_svg(latex, svg_path, svg_i, equation)
+    for (svg_i, latex) in enumerate(latexs):  
+        insert_svg(latex, svg_path, svg_i, equation)
         
 def mathjax2svg(source: str, svg_path: str) -> str:
     Path(svg_path).mkdir(parents=True, exist_ok=True)    

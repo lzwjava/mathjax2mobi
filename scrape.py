@@ -59,6 +59,9 @@ def scrape(chapter):
             name = img_name(src)
             img.attrs['src'] = f'img/{name}.png'                
     
+    div = soup.find('div', {'class': 'floating-menu'})
+    div.decompose()
+    
     result = mathjax2svg(soup.prettify(), f'{chapter_path_s}/svgs')
     
     f = open(f'{chapter_path_s}/I_{chapter_str}.html', 'w')

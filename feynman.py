@@ -1,6 +1,5 @@
 from os import replace
 import subprocess
-from sys import prefix
 from typing import List
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
@@ -23,6 +22,7 @@ def wrap_latex(latex, equation = False):
     wrap = ''
     if equation:
         wrap = latex.string
+        wrap = wrap.replace('\n\n','')
     else:
         wrap = '$' + latex.string + '$'
     wrap = wrap.replace('label', 'tag')
@@ -97,14 +97,22 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
     for (svg_i, latex) in enumerate(latexs):  
         insert_svg(latex, svg_path, svg_i, equation)
         
+def find_script(soup: BeautifulSoup):
+    s1 = soup.find_all('script', attrs={'type':'text/x-mathjax-config'})
+    s2 = soup.find('script', attrs={'type':'text/x-mathjax-config;executed=true'})
+    if len(s1) == 2 and len(s2) == 0:
+        return s1[0]
+    elif len(s1) == 0 and len(s2) == 2:
+        return s2[0]
+    else:
+        # no macros
+        return None
+        
 def extract_latex_command(soup: BeautifulSoup):
-    s = soup.find('script', attrs={'type':'text/x-mathjax-config;executed=true'})
+    s = find_script(soup)
     if s is None:
-        s = soup.find('script', attrs={'type':'text/x-mathjax-config'})
-    if s is None:
-        raise Exception('mathjax config script not found')                    
+        return ''
     script_str = s.string
-    print(script_str)
     start = script_str.find('Macros: {')
     end = script_str.find('});')
     script_str = script_str[(start + 8):(end-8)]
@@ -144,10 +152,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg_sync(latexs, macros, svg_path, equation=False)
+    to_svg(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg_sync(latexs, macros, svg_path, equation=True)
+    to_svg(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      

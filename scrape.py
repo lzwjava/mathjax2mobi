@@ -80,7 +80,7 @@ def convert(page_source, chapter_str):
 def main():
     start = timeit.default_timer()
     chapter_n = 1
-    ps = [Process(target=scrape, args=(chapter_string(i+2),)) for i in range(chapter_n)]
+    ps = [Process(target=scrape, args=(chapter_string(i+4),)) for i in range(chapter_n)]
     for p in ps:
         p.start()
     for p in ps:

@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from bs4.element import PageElement
 from latex2svg import latex2svg, default_params
 from pathlib import Path
-from multiprocessing import Process
+from multiprocessing import Pool, Process
 import json
 import re
 
@@ -85,18 +85,16 @@ def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=
     
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
-    ps = []
+    pool = Pool(processes = 100)    
+    results = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)
         latex_str = wrap_latex(latex.string, equation)
-        
-        p = Process(target=make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
-        ps.append(p)
-    for p in ps:
-        p.start()
-    for p in ps:
-        p.join()
-        
+        result = pool.apply_async(make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
+        results.append(result)
+    for (i,result) in enumerate(results):
+        # print(i, result.get())
+        pass
     for (svg_i, latex) in enumerate(latexs):  
         insert_svg(latex, svg_path, svg_i, equation)
         
@@ -175,14 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # a =wrap_latex(r"""
-    # \label{Eq:I:6:7}
-    # D_N^2=
-    # \begin{cases}
-    # D_{N-1}^2+2D_{N-1}+1,\\[2ex]
-    # \kern 3.7em \textit{or}\\[2ex]
-    # D_{N-1}^2-2D_{N-1}+1.
-    # \end{cases}                  
-    #            """,  True)
-    # print(a)
     # pass

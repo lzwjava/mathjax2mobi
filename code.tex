@@ -8,23 +8,20 @@
 \usepackage[libertine]{newtxmath}
 
 
+\newcommand{\abs}[1]{\lvert{#1}\rvert}
+\newcommand{\expval}[1]{\langle{#1}\rangle}
 
 
 \begin{document}
 \begin{preview}
 \begin{equation}
-\tag{Eq:I:4:4}
-
-\begin{pmatrix}
-\text{change in}\\
-\text{energy}
-\end{pmatrix}=
-(\text{force})\times
-
-\begin{pmatrix}
-\text{distance force}\\
-\text{acts through}
-\end{pmatrix}.
+    \label{Eq:I:6:7}
+    D_N^2=
+    \begin{cases}
+    D_{N-1}^2+2D_{N-1}+1,\\[2ex]
+    \kern 3.7em \textit{or}\\[2ex]
+    D_{N-1}^2-2D_{N-1}+1.
+    \end{cases}
 \end{equation}
 \end{preview}
 \end{document}

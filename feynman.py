@@ -7,24 +7,27 @@ from latex2svg import latex2svg, default_params
 from pathlib import Path
 from multiprocessing import Process
 import json
+import re
 
 def clean_mathjax(soup, name, cls):
     previews = soup.find_all(name, {'class': cls})
     for preview in previews:
-        preview.decompose()
+        preview.decompose()        
         
 def clean_script(soup):
     scripts = soup.find_all('script')
     for s in scripts:
         s.decompose()    
 
-def wrap_latex(latex, equation = False):
+def wrap_latex(latex_str, equation = False):
     wrap = ''
     if equation:
-        wrap = latex.string
-        wrap = wrap.replace('\n\n','')
+        wrap = latex_str
+        # There mustn't be any empty lines within equation 
+        wrap = wrap.replace('\n\n','\n')
+        wrap = re.sub(r'\\kern{(.*)em}', r'\\kern $1em ', wrap)
     else:
-        wrap = '$' + latex.string + '$'
+        wrap = '$' + latex_str + '$'
     wrap = wrap.replace('label', 'tag')
     return wrap
  
@@ -76,7 +79,7 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
     
 def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=False):
      for (svg_i, latex) in enumerate(latexs):  
-         latex_str = wrap_latex(latex, equation)
+         latex_str = wrap_latex(latex.string, equation)
          make_svg(latex_str, macros, svg_path, svg_i, equation)
          insert_svg(latex, svg_path, svg_i, equation)
     
@@ -85,7 +88,7 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
     ps = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)
-        latex_str = wrap_latex(latex, equation)
+        latex_str = wrap_latex(latex.string, equation)
         
         p = Process(target=make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
         ps.append(p)
@@ -99,7 +102,7 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         
 def find_script(soup: BeautifulSoup):
     s1 = soup.find_all('script', attrs={'type':'text/x-mathjax-config'})
-    s2 = soup.find('script', attrs={'type':'text/x-mathjax-config;executed=true'})
+    s2 = soup.find_all('script', attrs={'type':'text/x-mathjax-config;executed=true'})
     if len(s1) == 2 and len(s2) == 0:
         return s1[0]
     elif len(s1) == 0 and len(s2) == 2:
@@ -152,10 +155,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg(latexs, macros, svg_path, equation=False)
+    to_svg_sync(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg(latexs, macros, svg_path, equation=True)
+    to_svg_sync(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      
@@ -171,5 +174,15 @@ def main():
     output_file.close()    
 
 if __name__ == "__main__":
-    main()
+    # main()
+    a =wrap_latex(r"""
+    \label{Eq:I:6:7}
+    D_N^2=
+    \begin{cases}
+    D_{N-1}^2+2D_{N-1}+1,\\[2ex]
+    \kern 3.7em \textit{or}\\[2ex]
+    D_{N-1}^2-2D_{N-1}+1.
+    \end{cases}                  
+               """,  True)
+    print(a)
     # pass

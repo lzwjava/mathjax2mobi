@@ -79,13 +79,9 @@ def convert(page_source, chapter_str):
 
 def main():
     start = timeit.default_timer()
-    chapter_n = 1
-    ps = [Process(target=scrape, args=(chapter_string(i+9),)) for i in range(chapter_n)]
-    for p in ps:
-        p.start()
-    for p in ps:
-        p.join()
-    
+    chapter_n = 2
+    for i in range(chapter_n):
+        scrape(chapter_string(i+50))
     stop = timeit.default_timer()
     print('Time: ', stop - start) 
 

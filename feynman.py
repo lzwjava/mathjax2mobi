@@ -28,7 +28,9 @@ def wrap_latex(latex_str, equation = False):
         wrap = re.sub(r'\\kern{(.*)em}', r'\\kern \1em ', wrap)
     else:
         wrap = '$' + latex_str + '$'
-    wrap = wrap.replace('label', 'tag')
+    if 'tag' not in wrap:
+        # Package amsmath Error: Multiple \tag.        
+        wrap = wrap.replace('label', 'tag')
     return wrap
  
 def wrap_svg(svg, equation):
@@ -85,7 +87,7 @@ def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=
     
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
-    pool = Pool(processes = 50)    
+    pool = Pool(processes = 30)    
     results = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)
@@ -114,20 +116,15 @@ def extract_latex_command(soup: BeautifulSoup):
     if s is None:
         return ''
     script_str = s.string
-    start = script_str.find('Macros: {')
-    end = script_str.find('});')
-    script_str = script_str[(start + 8):(end-8)]
-    script_str = script_str.replace(' ', '')
-    script_str = script_str.replace('\n', '')
-    script_str = script_str.replace(':[', '":[')
-    script_str = script_str.replace('],', '],"')
-    script_str = script_str.replace('{', '{"', 1)
-    json_macros = json.loads(script_str)
-    # print(json_macros)        
+    match = re.search(r'Macros:\s({[\s\S]*]\s*})', script_str)
+    if match is None:
+        raise Exception('not found macros')
+    match_str = match.group(1)
+    match_str = re.sub(r'(\S*):', r'"\1":', match_str)
+    json_macros = json.loads(match_str)
     macros = ''
     for name in json_macros:
         value = json_macros[name]
-        # print(name, value)
         expand = value[0]
         arg_num = value[1]
         arg = ''     
@@ -139,7 +136,6 @@ def extract_latex_command(soup: BeautifulSoup):
                         .replace('expand', expand)
         macros += template + '\n'
     
-    # print(macros)
     return macros
     
         
@@ -153,10 +149,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg(latexs, macros, svg_path, equation=False)
+    to_svg_sync(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg(latexs, macros, svg_path, equation=True)
+    to_svg_sync(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      

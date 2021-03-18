@@ -107,7 +107,7 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         results.append(result)
     for (i,result) in enumerate(results):
         result.get()
-    for (svg_i, latex) in enumerate(latexs):  
+    for (svg_i, latex) in enumerate(latexs):
         insert_svg(latex, svg_path, svg_i, equation)
         
 def find_script(soup: BeautifulSoup):

@@ -25,7 +25,7 @@ def wrap_latex(latex_str, equation = False):
         wrap = latex_str
         # There mustn't be any empty lines within equation 
         wrap = wrap.replace('\n\n','\n')
-        wrap = re.sub(r'\\kern{(.*)em}', r'\\kern $1em ', wrap)
+        wrap = re.sub(r'\\kern{(.*)em}', r'\\kern \1em ', wrap)
     else:
         wrap = '$' + latex_str + '$'
     wrap = wrap.replace('label', 'tag')
@@ -155,10 +155,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg_sync(latexs, macros, svg_path, equation=False)
+    to_svg(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg_sync(latexs, macros, svg_path, equation=True)
+    to_svg(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      
@@ -174,15 +174,15 @@ def main():
     output_file.close()    
 
 if __name__ == "__main__":
-    # main()
-    a =wrap_latex(r"""
-    \label{Eq:I:6:7}
-    D_N^2=
-    \begin{cases}
-    D_{N-1}^2+2D_{N-1}+1,\\[2ex]
-    \kern 3.7em \textit{or}\\[2ex]
-    D_{N-1}^2-2D_{N-1}+1.
-    \end{cases}                  
-               """,  True)
-    print(a)
+    main()
+    # a =wrap_latex(r"""
+    # \label{Eq:I:6:7}
+    # D_N^2=
+    # \begin{cases}
+    # D_{N-1}^2+2D_{N-1}+1,\\[2ex]
+    # \kern 3.7em \textit{or}\\[2ex]
+    # D_{N-1}^2-2D_{N-1}+1.
+    # \end{cases}                  
+    #            """,  True)
+    # print(a)
     # pass

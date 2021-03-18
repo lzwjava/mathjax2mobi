@@ -85,7 +85,7 @@ def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=
     
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
-    pool = Pool(processes = 100)    
+    pool = Pool(processes = 50)    
     results = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)

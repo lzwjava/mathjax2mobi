@@ -1,4 +1,4 @@
-\documentclass[14pt,preview]{standalone}
+\documentclass[class=scrreprt,preview,fontsize=14pt]{standalone}
 
 \usepackage[utf8x]{inputenc}
 \usepackage{amsmath}
@@ -7,10 +7,10 @@
 \usepackage{newtxtext}
 \usepackage[libertine]{newtxmath}
 
+\addtokomafont{disposition}{\rmfamily}
 
 \newcommand{\abs}[1]{\lvert{#1}\rvert}
 \newcommand{\expval}[1]{\langle{#1}\rangle}
-
 
 \begin{document}
 \begin{preview}

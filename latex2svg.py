@@ -17,7 +17,7 @@ from tempfile import TemporaryDirectory
 from ctypes.util import find_library
 
 default_template = r"""
-\documentclass[{{ fontsize }}pt,preview]{standalone}
+\documentclass[class=scrreprt,preview,fontsize={{ fontsize }}pt]{standalone}
 {{ preamble }}
 
 {{ macros }}

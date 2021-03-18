@@ -1,5 +1,6 @@
 from os import replace
 import subprocess
+from sys import stdout
 from typing import List
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
@@ -8,6 +9,7 @@ from pathlib import Path
 from multiprocessing import Pool, Process
 import json
 import re
+import os
 
 def clean_mathjax(soup, name, cls):
     previews = soup.find_all(name, {'class': cls})
@@ -55,6 +57,9 @@ def svg_prefix(equation: bool):
 
 def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool):
     prefix = svg_prefix(equation)
+    path = f'{svg_path}/{prefix}{svg_i}.svg'
+    if os.path.exists(path):
+        return    
     out = {}
     try:
         default_params['macros'] = macros
@@ -62,9 +67,15 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     except subprocess.CalledProcessError as err:
         print(err.stderr)
         print(err.stdout)
-        raise err      
+        if 'Missing number' in str(err.stdout) or \
+           'Illegal unit of measure' in str(err.stdout) or \
+            'A <box> was supposed' in str(err.stdout) or \
+            'Undefined control sequence' in str(err.stdout):
+            return
+        else:
+            raise err
         
-    f = open(f'{svg_path}/{prefix}{svg_i}.svg', 'w')
+    f = open(path, 'w')
     f.write(out['svg'])
     f.close()    
 
@@ -87,7 +98,7 @@ def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=
     
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
-    pool = Pool(processes = 30)    
+    pool = Pool(processes = 30)
     results = []
     for (svg_i, latex) in enumerate(latexs):  
         print(latex.string)
@@ -95,8 +106,7 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         result = pool.apply_async(make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
         results.append(result)
     for (i,result) in enumerate(results):
-        # print(i, result.get())
-        pass
+        result.get()
     for (svg_i, latex) in enumerate(latexs):  
         insert_svg(latex, svg_path, svg_i, equation)
         
@@ -140,7 +150,7 @@ def extract_latex_command(soup: BeautifulSoup):
     
         
 def mathjax2svg(source: str, svg_path: str) -> str:
-    Path(svg_path).mkdir(parents=True, exist_ok=True)    
+    Path(svg_path).mkdir(parents=True, exist_ok=True)
     
     soup = BeautifulSoup(source, features="lxml")
     clean_mathjax(soup, 'span', 'MathJax')
@@ -149,10 +159,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg_sync(latexs, macros, svg_path, equation=False)
+    to_svg(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg_sync(latexs, macros, svg_path, equation=True)
+    to_svg(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      

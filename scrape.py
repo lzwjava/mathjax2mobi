@@ -44,16 +44,20 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.
 def scrape(driver, chapter_str):
     url = f'https://www.feynmanlectures.caltech.edu/I_{chapter_str}.html' 
     driver.get(url)
-    page_source = driver.page_source        
+   
     chapter_path_s = chapter_path(chapter_str)
     
     Path(chapter_path_s).mkdir(parents=True, exist_ok=True)    
     print(f'scraping {url}')
+    
+    page_source = driver.page_source     
     print(page_source)
+
         
     WebDriverWait(driver, 10).until(
-        expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'h3.section-title'))
-    )
+        expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex"]'))
+    )    
+ 
         
     download_images(driver, chapter_str)
     print('download_images')

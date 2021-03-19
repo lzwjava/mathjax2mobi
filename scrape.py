@@ -51,13 +51,17 @@ def scrape(driver, chapter_str):
     print(f'scraping {url}')    
         
     try:
-        WebDriverWait(driver, 20).until(
-            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex"]'))
-        )        
-    except TimeoutException:
-        # no math/tex I_16.html
+        WebDriverWait(driver, 30).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex"]')) or
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex; mode=display"]'))            
+        )
+    except TimeoutException as e:
+        # no math/tex
         print('no math/tex script')
-        pass
+        file = open('out.html', 'w')
+        file.write(driver.page_source)
+        file.close()
+        raise e
 
     page_source = driver.page_source     
          
@@ -112,9 +116,9 @@ def change_title():
 def main():
     start = timeit.default_timer()
     driver = webdriver.Chrome()    
-    chapter_n = 52
+    chapter_n = 10
     for i in range(chapter_n):
-        scrape(driver, chapter_string(i+1))
+        scrape(driver, chapter_string(i+36))
     driver.quit()
     stop = timeit.default_timer()    
     print('Time: ', stop - start) 

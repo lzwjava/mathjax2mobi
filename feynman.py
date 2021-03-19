@@ -56,7 +56,6 @@ def svg_prefix(equation: bool):
     return prefix
 
 def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool):
-    print(f'make_svg {svg_i}')
     prefix = svg_prefix(equation)
     path = f'{svg_path}/{prefix}{svg_i}.svg'
     if os.path.exists(path):
@@ -81,7 +80,6 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     f.close()    
 
 def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
-    print(f'insert_svg {svg_i}')
     prefix = svg_prefix(equation)
     
     node = BeautifulSoup('<img>', features="html.parser")
@@ -93,7 +91,6 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
     latex.insert_after(p)
     
 def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=False):
-    print(f'latexs {len(latexs)}')
     for (svg_i, latex) in enumerate(latexs):  
          latex_str = wrap_latex(latex.string, equation)
          make_svg(latex_str, macros, svg_path, svg_i, equation)
@@ -109,7 +106,6 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         result = pool.apply_async(make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
         results.append(result)
     for (i,result) in enumerate(results):    
-        print(f'{i} get')
         result.get()
     for (svg_i, latex) in enumerate(latexs):
         insert_svg(latex, svg_path, svg_i, equation)
@@ -154,7 +150,6 @@ def extract_latex_command(soup: BeautifulSoup):
     
         
 def mathjax2svg(source: str, svg_path: str) -> str:
-    print('mathjax2svg')
     Path(svg_path).mkdir(parents=True, exist_ok=True)
     
     soup = BeautifulSoup(source, features="html.parser")
@@ -164,10 +159,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg_sync(latexs, macros, svg_path, equation=False)
+    to_svg(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg_sync(latexs, macros, svg_path, equation=True)
+    to_svg(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      

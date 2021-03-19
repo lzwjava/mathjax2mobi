@@ -4,6 +4,7 @@ from multiprocessing import Process
 import timeit
 from pathlib import Path
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -30,7 +31,6 @@ def download_images(driver: webdriver.Chrome, chapter):
     Path(path).mkdir(parents=True, exist_ok=True)    
         
     elements = driver.find_elements(By.TAG_NAME, "img")    
-    print(len(elements))
     for element in elements:
         src = element.get_attribute('src')
         name = img_name(src)
@@ -44,26 +44,26 @@ USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.
 def scrape(driver, chapter_str):
     url = f'https://www.feynmanlectures.caltech.edu/I_{chapter_str}.html' 
     driver.get(url)
-   
+       
     chapter_path_s = chapter_path(chapter_str)
     
     Path(chapter_path_s).mkdir(parents=True, exist_ok=True)    
-    print(f'scraping {url}')
-    
-    page_source = driver.page_source     
-    print(page_source)
+    print(f'scraping {url}')    
+        
+    try:
+        WebDriverWait(driver, 20).until(
+            expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex"]'))
+        )        
+    except TimeoutException:
+        # no math/tex I_16.html
+        print('no math/tex script')
+        pass
 
-        
-    WebDriverWait(driver, 10).until(
-        expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex"]'))
-    )    
- 
-        
+    page_source = driver.page_source     
+         
     download_images(driver, chapter_str)
-    print('download_images')
     
     convert(page_source, chapter_str)
-    print('convert')
     
     return page_source
 
@@ -75,7 +75,6 @@ def convert(page_source, chapter_str):
     chapter_path_s = chapter_path(chapter_str)
     soup = BeautifulSoup(page_source, features='html.parser')        
     imgs = soup.find_all('img')
-    print(len(imgs))
     for img in imgs:
         if 'src' in img.attrs or 'data-src' in img.attrs:
             src = ''
@@ -113,9 +112,9 @@ def change_title():
 def main():
     start = timeit.default_timer()
     driver = webdriver.Chrome()    
-    chapter_n = 1
+    chapter_n = 52
     for i in range(chapter_n):
-        scrape(driver, chapter_string(i+28))
+        scrape(driver, chapter_string(i+1))
     driver.quit()
     stop = timeit.default_timer()    
     print('Time: ', stop - start) 

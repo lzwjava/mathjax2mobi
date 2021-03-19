@@ -4,7 +4,11 @@ from multiprocessing import Process
 import timeit
 from pathlib import Path
 from selenium import webdriver
+from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions
+
 from feynman import mathjax2svg
 import re
 
@@ -26,6 +30,7 @@ def download_images(driver: webdriver.Chrome, chapter):
     Path(path).mkdir(parents=True, exist_ok=True)    
         
     elements = driver.find_elements(By.TAG_NAME, "img")    
+    print(len(elements))
     for element in elements:
         src = element.get_attribute('src')
         name = img_name(src)
@@ -44,10 +49,17 @@ def scrape(driver, chapter_str):
     
     Path(chapter_path_s).mkdir(parents=True, exist_ok=True)    
     print(f'scraping {url}')
-            
-    download_images(driver, chapter_str)    
+    print(page_source)
+        
+    WebDriverWait(driver, 10).until(
+        expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'h3.section-title'))
+    )
+        
+    download_images(driver, chapter_str)
+    print('download_images')
     
     convert(page_source, chapter_str)
+    print('convert')
     
     return page_source
 
@@ -57,8 +69,9 @@ def chapter_string(chapter):
 
 def convert(page_source, chapter_str):    
     chapter_path_s = chapter_path(chapter_str)
-    soup = BeautifulSoup(page_source, features='lxml')        
+    soup = BeautifulSoup(page_source, features='html.parser')        
     imgs = soup.find_all('img')
+    print(len(imgs))
     for img in imgs:
         if 'src' in img.attrs or 'data-src' in img.attrs:
             src = ''

@@ -122,9 +122,9 @@ def change_title():
 def main():
     start = timeit.default_timer()
     driver = webdriver.Chrome()    
-    chapter_n = 1
+    chapter_n = 20
     for i in range(chapter_n):
-        scrape(driver, chapter_string(i+52))
+        scrape(driver, chapter_string(i+30))
 
     driver.quit()
     stop = timeit.default_timer()    

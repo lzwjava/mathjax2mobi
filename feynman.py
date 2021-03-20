@@ -1,12 +1,11 @@
-from os import replace
+from os import fdopen, replace
 import subprocess
-from sys import stdout
 from typing import List
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
 from latex2svg import latex2svg, default_params
 from pathlib import Path
-from multiprocessing import Pool, Process
+from multiprocessing import Pool
 import json
 import re
 import os
@@ -55,7 +54,7 @@ def svg_prefix(equation: bool):
         prefix = 'in_'
     return prefix
 
-def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool):
+def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool) -> bool:
     prefix = svg_prefix(equation)
     path = f'{svg_path}/{prefix}{svg_i}.svg'
     if os.path.exists(path):
@@ -67,17 +66,20 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     except subprocess.CalledProcessError as err:
         print(err.stderr)
         print(err.stdout)
+        print(path)
         if 'Missing number' in str(err.stdout) or \
            'Illegal unit of measure' in str(err.stdout) or \
             'A <box> was supposed' in str(err.stdout) or \
             'Undefined control sequence' in str(err.stdout):
-            return
+                raise err
+                # return False
         else:
-            raise err
+                raise err
         
     f = open(path, 'w')
     f.write(out['svg'])
-    f.close()    
+    f.close()
+    return True
 
 def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
     prefix = svg_prefix(equation)

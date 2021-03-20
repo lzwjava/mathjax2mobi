@@ -171,7 +171,7 @@ def main():
         with open(args.preamble) as f:
             preamble = f.read()
     latex = sys.stdin.read()
-    try:
+    try:        
         params = default_params.copy()
         params['preamble'] = preamble
         out = latex2svg(latex, params)

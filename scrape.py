@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
@@ -41,10 +42,11 @@ def download_images(driver: webdriver.Chrome, chapter):
 
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_6) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Safari/605.1.15'
 
-def scrape(driver, chapter_str):
+def scrape(driver : WebDriver, chapter_str):
     url = f'https://www.feynmanlectures.caltech.edu/I_{chapter_str}.html' 
+    
     driver.get(url)
-       
+    
     chapter_path_s = chapter_path(chapter_str)
     
     Path(chapter_path_s).mkdir(parents=True, exist_ok=True)    
@@ -56,11 +58,8 @@ def scrape(driver, chapter_str):
             expected_conditions.presence_of_element_located((By.CSS_SELECTOR, 'script[type="math/tex; mode=display"]'))            
         )
     except TimeoutException as e:
-        # no math/tex
-        print('no math/tex script')
-        file = open('out.html', 'w')
-        file.write(driver.page_source)
-        file.close()
+        # no math/tex, so weired
+        print('no math/tex script') 
         raise e
 
     page_source = driver.page_source     
@@ -96,6 +95,13 @@ def convert(page_source, chapter_str):
     title = soup.find('title') 
     title.string = title.string.replace('The Feynman Lectures on Physics Vol. I ', '')
     
+    # kindlepreviewer mobi convert
+    links = soup.find_all('a')
+    for link in links:
+        link.name = 'span'
+        if 'href' in link.attrs:
+            del link.attrs['href']
+    
     result = mathjax2svg(soup.encode(), f'{chapter_path_s}/svgs')
     
     f = open(f'{chapter_path_s}/I_{chapter_str}.html', 'w')
@@ -116,12 +122,13 @@ def change_title():
 def main():
     start = timeit.default_timer()
     driver = webdriver.Chrome()    
-    chapter_n = 10
+    chapter_n = 1
     for i in range(chapter_n):
-        scrape(driver, chapter_string(i+36))
+        scrape(driver, chapter_string(i+52))
+
     driver.quit()
     stop = timeit.default_timer()    
-    print('Time: ', stop - start) 
+    print('Time: ', stop - start)
 
 if __name__ == "__main__":    
     main()

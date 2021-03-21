@@ -53,7 +53,7 @@ def svg_prefix(equation: bool):
         prefix = 'in_'
     return prefix
 
-def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool) -> bool:
+def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool):
     prefix = svg_prefix(equation)
     path = f'{svg_path}/{prefix}{svg_i}.svg'
     # if os.path.exists(path):
@@ -78,14 +78,14 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     f = open(path, 'w')
     f.write(out['svg'])
     f.close()
-    return out
+    return (out, svg_path, svg_i, equation)
 
 def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool, out = {}):
     prefix = svg_prefix(equation)
     
     node = BeautifulSoup('<img>', features="html.parser")
     img = node.find('img')
-    img.attrs['src'] = f'{svg_last_dir(svg_path)}/{prefix}{svg_i}.png'
+    img.attrs['src'] = f'{svg_last_dir(svg_path)}/{prefix}{svg_i}.svg'
     if 'width' in out:
         width = out['width']
         height = out['height']
@@ -99,9 +99,8 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool, ou
 def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=False):
     for (svg_i, latex) in enumerate(latexs):  
          latex_str = wrap_latex(latex.string, equation)
-         out = make_svg(latex_str, macros, svg_path, svg_i, equation)
-         insert_svg(latex, svg_path, svg_i, equation, out)
-    
+         (out, _, _, _) = make_svg(latex_str, macros, svg_path, svg_i, equation)
+         insert_svg(latex, svg_path, svg_i, equation, out)    
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
     pool = Pool(processes = 30)
@@ -111,10 +110,9 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         latex_str = wrap_latex(latex.string, equation)
         result = pool.apply_async(make_svg, args=(latex_str, macros, svg_path, svg_i, equation))
         results.append(result)
-    for (i,result) in enumerate(results):    
-        result.get()
-    for (svg_i, latex) in enumerate(latexs):
-        insert_svg(latex, svg_path, svg_i, equation)
+    for (_,result) in enumerate(results):
+        (out, svg_path, svg_i, equation)  = result.get()
+        insert_svg(latexs[svg_i], svg_path, svg_i, equation, out)
         
 def find_script(soup: BeautifulSoup):
     s1 = soup.find_all('script', attrs={'type':'text/x-mathjax-config'})
@@ -165,10 +163,10 @@ def mathjax2svg(source: str, svg_path: str) -> str:
     macros = extract_latex_command(soup)
     
     latexs = soup.find_all('script', {'type': 'math/tex'})
-    to_svg_sync(latexs, macros, svg_path, equation=False)
+    to_svg(latexs, macros, svg_path, equation=False)
     
     latexs = soup.find_all('script', {'type': 'math/tex; mode=display'})   
-    to_svg_sync(latexs, macros, svg_path, equation=True)
+    to_svg(latexs, macros, svg_path, equation=True)
     
     clean_script(soup)  
     return soup.prettify()      
@@ -185,4 +183,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # pass

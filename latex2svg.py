@@ -151,8 +151,8 @@ def dvi2svg(params, working_directory):
         regex = r'\b([0-9.]+)pt x ([0-9.]+)pt'
         match = re.search(regex, output)
         if match:
-            width = float(match.group(1)) / 72 * 96
-            height = float(match.group(2)) / 72 * 96
+            width = round(float(match.group(1)) / 72 * 96, 2)
+            height = round(float(match.group(2)) / 72 * 96, 2)
             return (width, height)
         else:
             return None, None

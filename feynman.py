@@ -8,7 +8,6 @@ from pathlib import Path
 from multiprocessing import Pool
 import json
 import re
-import os
 
 def clean_mathjax(soup, name, cls):
     previews = soup.find_all(name, {'class': cls})
@@ -79,15 +78,20 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     f = open(path, 'wb')
     f.write(out['png'])
     f.close()
-    return True
+    return out
 
-def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
+def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool, out = {}):
     prefix = svg_prefix(equation)
     
     node = BeautifulSoup('<img>', features="html.parser")
     img = node.find('img')
     img.attrs['src'] = f'{svg_last_dir(svg_path)}/{prefix}{svg_i}.png'
-    img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
+    if 'width' in out:
+        width = out['width']
+        height = out['height']
+        img.attrs['style'] = f'vertical-align: middle; margin: 0.5em 0; width={width}px; height={height}px;'
+    else:
+        img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
     
     p = wrap_svg(img, equation)
     latex.insert_after(p)
@@ -95,8 +99,8 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool):
 def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=False):
     for (svg_i, latex) in enumerate(latexs):  
          latex_str = wrap_latex(latex.string, equation)
-         make_svg(latex_str, macros, svg_path, svg_i, equation)
-         insert_svg(latex, svg_path, svg_i, equation)
+         out = make_svg(latex_str, macros, svg_path, svg_i, equation)
+         insert_svg(latex, svg_path, svg_i, equation, out)
     
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):

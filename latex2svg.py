@@ -44,7 +44,7 @@ default_macros = r"""
 
 latex_cmd = 'latex -interaction nonstopmode -halt-on-error'
 dvisvgm_cmd = 'dvisvgm --no-fonts'
-dvipng_cmd = 'dvipng -D 400 -bg Transparent --width --height '
+dvipng_cmd = 'dvipng -D 250 -bg Transparent --width --height '
 
 default_params = {
     'fontsize': 14,  # pt
@@ -187,11 +187,12 @@ def dvi2png(params, working_directory):
     print(output)
     
     search = re.search(r'height=(\d+) width=(\d+)', output)
-    print(search.groups())
-    if len(search) != 3:
+    if len(search.groups()) != 2:
         raise Exception('size wrong')
     height = search.group(1)
     width = search.group(2)
+    print(height)
+    print(width)
 
     return {'png': png, 'width': width, 'height': height}
 

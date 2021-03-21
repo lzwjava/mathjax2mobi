@@ -89,7 +89,6 @@ def latex2dvi(code, working_directory, params=default_params):
     except FileNotFoundError:
         raise RuntimeError('latex not found')
     
-    return dvi2png(params, working_directory)
 
 def latex2png(code, params=default_params, working_directory=None):
     if working_directory is None:
@@ -147,28 +146,22 @@ def dvi2svg(params, working_directory):
     with open(os.path.join(working_directory, 'code.svg'), 'r') as f:
         svg = f.read()
 
-    # Parse dvisvgm output for size and alignment
+    # Parse dvisvgm output for size
     def get_size(output):
         regex = r'\b([0-9.]+)pt x ([0-9.]+)pt'
         match = re.search(regex, output)
         if match:
-            return (float(match.group(1)) / fontsize,
-                    float(match.group(2)) / fontsize)
+            width = float(match.group(1)) / 72 * 96
+            height = float(match.group(2)) / 72 * 96
+            return (width, height)
         else:
             return None, None
 
-    def get_measure(output, name):
-        regex = r'\b%s=([0-9.e-]+)pt' % name
-        match = re.search(regex, output)
-        if match:
-            return float(match.group(1)) / fontsize
-        else:
-            return None
-
     output = ret.stderr.decode('utf-8')
     width, height = get_size(output)
-    depth = get_measure(output, 'depth')
-    return {'svg': svg, 'depth': depth, 'width': width, 'height': height}    
+    print(width)
+    print(height)
+    return {'svg': svg, 'width': width, 'height': height}
 
 def dvi2png(params, working_directory):
     env = os.environ.copy()

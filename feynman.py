@@ -3,7 +3,7 @@ import subprocess
 from typing import List
 from bs4 import BeautifulSoup
 from bs4.element import PageElement
-from latex2svg import latex2png, default_params
+from latex2svg import latex2png, latex2svg, default_params
 from pathlib import Path
 from multiprocessing import Pool
 import json
@@ -55,13 +55,13 @@ def svg_prefix(equation: bool):
 
 def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: bool) -> bool:
     prefix = svg_prefix(equation)
-    path = f'{svg_path}/{prefix}{svg_i}.png'
+    path = f'{svg_path}/{prefix}{svg_i}.svg'
     # if os.path.exists(path):
     #     return
     out = {}
     try:
         default_params['macros'] = macros
-        out = latex2png(latex_str)
+        out = latex2svg(latex_str)
     except subprocess.CalledProcessError as err:
         print(err.stderr)
         print(err.stdout)
@@ -75,8 +75,8 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
         else:
                 raise err
         
-    f = open(path, 'wb')
-    f.write(out['png'])
+    f = open(path, 'w')
+    f.write(out['svg'])
     f.close()
     return out
 

@@ -15,6 +15,7 @@ import shlex
 import re
 from tempfile import TemporaryDirectory
 from ctypes.util import find_library
+from PIL import Image
 
 default_template = r"""
 \documentclass[preview,fontsize={{ fontsize }}pt]{standalone}
@@ -43,6 +44,7 @@ default_macros = r"""
 
 latex_cmd = 'latex -interaction nonstopmode -halt-on-error'
 dvisvgm_cmd = 'dvisvgm --no-fonts'
+dvipng_cmd = 'dvipng -D 400 -bg Transparent --width --height '
 
 default_params = {
     'fontsize': 14,  # pt
@@ -51,6 +53,7 @@ default_params = {
     'macros': default_macros,
     'latex_cmd': latex_cmd,
     'dvisvgm_cmd': dvisvgm_cmd,
+    'dvipng_cmd': dvipng_cmd,
     'libgs': None,
 }
 
@@ -63,7 +66,39 @@ if not hasattr(os.environ, 'LIBGS') and not find_library('gs'):
             default_params['libgs'] = homebrew_libgs
     if not default_params['libgs']:
         print('Warning: libgs not found')
+        
+def latex2dvi(code, working_directory, params=default_params):
+    fontsize = params['fontsize']
+    document = (params['template']
+                .replace('{{ preamble }}', params['preamble'])
+                .replace('{{ macros }}', params['macros'])
+                .replace('{{ fontsize }}', str(fontsize))
+                .replace('{{ code }}', code))
+    
+    print(document)
 
+    with open(os.path.join(working_directory, 'code.tex'), 'w') as f:
+        f.write(document)
+    
+    # Run LaTeX and create DVI file
+    try:
+        ret = subprocess.run(shlex.split(params['latex_cmd']+' code.tex'),
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             cwd=working_directory)
+        ret.check_returncode()
+    except FileNotFoundError:
+        raise RuntimeError('latex not found')
+    
+    return dvi2png(params, working_directory)
+
+def latex2png(code, params=default_params, working_directory=None):
+    if working_directory is None:
+        with TemporaryDirectory() as tmpdir:
+            return latex2png(code, params, working_directory=tmpdir)
+    
+    latex2dvi(code, working_directory, params)        
+    
+    return dvi2png(params, working_directory)
 
 def latex2svg(code, params=default_params, working_directory=None):
     """Convert LaTeX to SVG using dvisvgm.
@@ -87,32 +122,18 @@ def latex2svg(code, params=default_params, working_directory=None):
     if working_directory is None:
         with TemporaryDirectory() as tmpdir:
             return latex2svg(code, params, working_directory=tmpdir)
+    
+    latex2dvi(code, working_directory, params)
+        
+    
+    return dvi2svg(params, working_directory)
 
+def dvi2svg(params, working_directory):
     fontsize = params['fontsize']
-    document = (params['template']
-                .replace('{{ preamble }}', params['preamble'])
-                .replace('{{ macros }}', params['macros'])
-                .replace('{{ fontsize }}', str(fontsize))
-                .replace('{{ code }}', code))
-    
-    print(document)
-
-    with open(os.path.join(working_directory, 'code.tex'), 'w') as f:
-        f.write(document)
-    
-    # Run LaTeX and create DVI file
-    try:
-        ret = subprocess.run(shlex.split(params['latex_cmd']+' code.tex'),
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             cwd=working_directory)
-        ret.check_returncode()
-    except FileNotFoundError:
-        raise RuntimeError('latex not found')
-
     # Add LIBGS to environment if supplied
     env = os.environ.copy()
     if params['libgs']:
-        env['LIBGS'] = params['libgs']
+        env['LIBGS'] = params['libgs']    
 
     # Convert DVI to SVG
     try:
@@ -147,8 +168,32 @@ def latex2svg(code, params=default_params, working_directory=None):
     output = ret.stderr.decode('utf-8')
     width, height = get_size(output)
     depth = get_measure(output, 'depth')
-    return {'svg': svg, 'depth': depth, 'width': width, 'height': height}
+    return {'svg': svg, 'depth': depth, 'width': width, 'height': height}    
 
+def dvi2png(params, working_directory):
+    env = os.environ.copy()
+    try:
+        ret = subprocess.run(shlex.split(params['dvipng_cmd']+' -o code.png code.dvi'),
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                             cwd=working_directory, env=env)
+        ret.check_returncode()
+    except FileNotFoundError:
+        raise RuntimeError('dvipng not found')
+
+    with open(os.path.join(working_directory, 'code.png'), 'rb') as f:
+        png = f.read()
+        
+    output = ret.stdout.decode('utf-8')
+    print(output)
+    
+    search = re.search(r'height=(\d+) width=(\d+)', output)
+    print(search.groups())
+    if len(search) != 3:
+        raise Exception('size wrong')
+    height = search.group(1)
+    width = search.group(2)
+
+    return {'png': png, 'width': width, 'height': height}
 
 def main():
     """Simple command line interface to latex2svg.

@@ -70,8 +70,8 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
            'Illegal unit of measure' in str(err.stdout) or \
             'A <box> was supposed' in str(err.stdout) or \
             'Undefined control sequence' in str(err.stdout):
-                raise err
-                # return False
+                # raise err
+                return ({}, svg_path, svg_i, equation)
         else:
                 raise err
         
@@ -89,7 +89,7 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool, ou
     if 'width' in out:
         width = out['width']
         height = out['height']
-        img.attrs['style'] = f'vertical-align: middle; margin: 0.5em 0; width={width}px; height={height}px;'
+        img.attrs['style'] = f'vertical-align: middle; margin: 0.5em 0; width:{width}px; height:{height}px;'
     else:
         img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'
     
@@ -100,6 +100,8 @@ def to_svg_sync(latexs: List[PageElement], macros: str, svg_path: str, equation=
     for (svg_i, latex) in enumerate(latexs):  
          latex_str = wrap_latex(latex.string, equation)
          (out, _, _, _) = make_svg(latex_str, macros, svg_path, svg_i, equation)
+         if 'svg' not in out:
+             continue
          insert_svg(latex, svg_path, svg_i, equation, out)    
 
 def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False):
@@ -112,6 +114,8 @@ def to_svg(latexs: List[PageElement], macros:str, svg_path: str, equation=False)
         results.append(result)
     for (_,result) in enumerate(results):
         (out, svg_path, svg_i, equation)  = result.get()
+        if 'svg' not in out:
+            continue
         insert_svg(latexs[svg_i], svg_path, svg_i, equation, out)
         
 def find_script(soup: BeautifulSoup):

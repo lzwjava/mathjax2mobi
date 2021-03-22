@@ -1,4 +1,3 @@
-from os import fdopen, replace
 import subprocess
 from typing import List
 from bs4 import BeautifulSoup
@@ -8,6 +7,7 @@ from pathlib import Path
 from multiprocessing import Pool
 import json
 import re
+import os
 
 def clean_mathjax(soup, name, cls):
     previews = soup.find_all(name, {'class': cls})
@@ -57,7 +57,7 @@ def make_svg(latex_str: str, macros: str, svg_path: str, svg_i: int, equation: b
     prefix = svg_prefix(equation)
     path = f'{svg_path}/{prefix}{svg_i}.svg'
     # if os.path.exists(path):
-    #     return
+    #     return ({}, svg_path, svg_i, equation)
     out = {}
     try:
         default_params['macros'] = macros
@@ -87,8 +87,8 @@ def insert_svg(latex: PageElement, svg_path: str, svg_i: int, equation: bool, ou
     img = node.find('img')
     img.attrs['src'] = f'{svg_last_dir(svg_path)}/{prefix}{svg_i}.svg'
     if 'width' in out:
-        width = out['width']
-        height = out['height']
+        width = out['width'] / 2
+        height = out['height'] / 2
         img.attrs['style'] = f'vertical-align: middle; margin: 0.5em 0; width:{width}px; height:{height}px;'
     else:
         img.attrs['style'] = 'vertical-align: middle; margin: 0.5em 0;'

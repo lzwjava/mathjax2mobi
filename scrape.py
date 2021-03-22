@@ -11,7 +11,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
 
-from feynman import mathjax2svg
+from mathjax2svg import mathjax2svg
 import re
 
 def chapter_path(chapter):
@@ -124,7 +124,7 @@ def main():
     driver = webdriver.Chrome()    
     chapter_n = 1
     for i in range(chapter_n):
-        scrape(driver, chapter_string(i+50))
+        scrape(driver, chapter_string(i+13))
 
     driver.quit()
     stop = timeit.default_timer()    
